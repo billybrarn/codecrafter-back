@@ -1,6 +1,7 @@
 const User = require('../models/User')
 const bcryptjs = require("bcryptjs")
 const sendMail = require('../config/mailService')
+const jwt = require('jsonwebtoken')
 
 exports.getAllUsers = async (req, res, next) => {
     try {
@@ -33,6 +34,26 @@ exports.createUsers = async (req, res, next) => {
     } catch (error) {
         console.log(error.message);
         
+    }
+}
+
+exports.loginUser = async (req, res, next) => {
+    try {
+        const {email, password} =  req.body;
+        const user = await User.findOne({email});
+        if (!user) {
+            return res.status(401).json({message:'invailed email or password'})
+        }
+        const isMatch = await bcryptjs.compare(password, user.password)
+
+        if (!isMatch) {
+            return res.status(401).json({message:'invailed email or password'})
+        }
+        const token = jwt.sign({id: user._id}, process.env.JWT_SECRET, {expiresIn: '1h'})
+        res.status(200).json({token, user})
+
+    } catch (error) {
+        console.log(error.message);    
     }
 }
 
